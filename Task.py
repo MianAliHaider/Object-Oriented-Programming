@@ -1,324 +1,79 @@
-import struct
-student_format = '11s30s2sif11s'
-grade_format = '20s11sf'
-student_file = 'students.dat'
-grade_file = 'grades.dat'
+class Numbers:
+    def __init__(self):
+        self.numbers_list = []
+        self.odd_number_list = []
+        self.even_number_list = []
 
-def pack_student_data(roll, name, department, semester, marks, phone):
-    return struct.pack(student_format, roll.encode(), name.encode(), department.encode(), semester, marks, phone.encode())
-
-def unpack_student_data(data):
-    return struct.unpack(student_format, data)
-
-def pack_grade_data(course, roll, marks):
-    return struct.pack(grade_format, course.encode(), roll.encode(), marks)
-
-def unpack_grade_data(data):
-    return struct.unpack(grade_format, data)
-
-
-def duplicate_roll(roll):
-    with open(student_file, 'rb') as file:
-        while True:
-            data = file.read(struct.calcsize(student_format))
-            if not data:
-                break
-            existing_roll = unpack_student_data(data)[0].decode().strip('\x00')
-            if existing_roll == roll:
-                return True
-    return False
-
-
-def add_student():
-    with open(student_file,"ab") as file:
-        roll=input("Enter roll number: ")
-        if not duplicate_roll(roll):
-            name=input("Enter name: ")
-            department=input("Enter department code: ")
-            semester=int(input("Enter semester: "))
-            marks=float(input("Enter last semester percent marks: "))
-            phone=input("Enter phone number: ")
-            student_data=pack_student_data(roll,name,department,semester,marks,phone)
-            file.write(student_data)
-            print("Student added successfully!")
+    def add_number(self, number):
+        self.numbers_list.append(number)
+        if number % 2 == 0:
+            self.even_number_list.append(number)
         else:
-            print("OOPs! Duplicate roll number. Student cannot be added.")
+            self.odd_number_list.append(number)
 
-
-def view_student_by_roll_no(roll):
-    with open(student_file,"rb") as file:
-        while True:
-            data=file.read(struct.calcsize(student_format))
-            if not data:
-                break
-            current_roll, _, _, _, _, _ =unpack_student_data(data)
-            if current_roll.decode().strip('\x00')==roll:
-                print("Roll number: {}, Name: {}, Department: {},Semester: {}, Marks: {}, Phone Number:{}".format(*unpack_student_data(data)))
+    def delete_number(self, number):
+        if number in self.numbers_list:
+            self.numbers_list.remove(number)
+            if number % 2 == 0:
+                self.even_number_list.remove(number)
             else:
-                print("Student not found.")
+                self.odd_number_list.remove(number)
+        else:
+            print(f"Number {number} is not found in the list.")
 
+    def search_number(self, number):
+        return number in self.numbers_list
 
-def edit_student_by_roll_no(roll):
-    with open(student_file, "r+b") as file:
-        found = False
-        while True:
-            data = file.read(struct.calcsize(student_format))
-            if not data:
-                break
-            current_roll, _, _, _, _, _ = unpack_student_data(data)
-            if current_roll.decode().strip('\x00') == roll:
-                found = True
-                name = input("Enter new name: ")
-                department = input("Enter new department code: ")
-                semester = int(input("Enter new semester: "))
-                marks = float(input("Enter last semester percent marks: "))
-                phone = input("Enter phone number: ")
-                updated_student_data = pack_student_data(roll, name, department, semester, marks, phone)
-                file.seek(-struct.calcsize(student_format), 1)
-                file.write(updated_student_data)
-                print("Student edited successfully!")
-                break
-        
-        if not found:
-            print("Student not found.")
+    def alter_number(self,old_number,new_number):
+        if old_number in self.numbers_list:
+            self.delete_number(old_number)
+            self.add_number(new_number)
+        else:
+            print(f"Number {old_number} not found in the list.")
 
+    def __next__(self):
+        if self.current_index < len(self.numbers):
+            result = self.numbers[self.current_index]
+            self.current_index += 1
+            return result
+        else:
+            raise StopIteration
 
-def delete_student_by_roll_no(roll):
-    with open(student_file, "r+b") as file:
-        found = False
-        while True:
-            data = file.read(struct.calcsize(student_format))
-            if not data:
-                break
-            current_roll, _, _, _, _, _ = unpack_student_data(data)
-            if current_roll.decode().strip('\x00') == roll:
-                found = True
-                file.seek(-struct.calcsize(student_format), 1)
-                file.write(b'\x00' * struct.calcsize(student_format))
-                print("Student deleted successfully!")
-                break
-        if not found:
-            print("Student not found.")
+    def __iter__(self):
+        return iter(self.numbers)
 
-
-def list_students_by_semester(semester):
-    with open(student_file, "rb") as file:
-        found = False
-        while True:
-            data = file.read(struct.calcsize(student_format))
-            if not data:
-                break
-            _, _, _, current_semester, _, _ = unpack_student_data(data)
-            if current_semester == semester:
-                found = True
-                print("Roll number: {}, Name: {}, Department: {}, Semester: {}, Marks: {}, Phone Number:{}".format(*unpack_student_data(data)))
-
-        if not found:
-            print("No students found for the specified semester.")
-
-
-def list_students_by_name(name):
-    with open(student_file, "rb") as file:
-        found = False
-        while True:
-            data = file.read(struct.calcsize(student_format))
-            if not data:
-                break
-            _, current_name, _, _, _, _ = unpack_student_data(data)
-            if current_name.decode().strip('\x00') == name:
-                found = True
-                print("Roll number: {}, Name: {}, Department: {}, Semester: {}, Marks: {}, Phone Number:{}".format(*unpack_student_data(data)))
-        if not found:
-            print("No students found with the specified name.")
-
-
-def print_students_list():
-    with open(student_file, "rb") as file:
-        while True:
-            data = file.read(struct.calcsize(student_format))
-            if not data:
-                break
-            print("Roll number: {}, Name: {}, Department: {}, Semester: {}, Marks: {}, Phone Number:{}".format(*unpack_student_data(data)))
-
-
-def add_grade_of_a_student_for_a_course():
-    course = input("Enter course name: ")
-    roll = input("Enter student's roll number: ")
-    if not duplicate_roll(roll):
-        print("Student not found. Cannot add grade.")
-        return
-    with open(grade_file, "wb+") as file:
-        while True:
-            data = file.read(struct.calcsize(grade_format))
-            if not data:
-                break
-            current_course, current_roll, _ = unpack_grade_data(data)
-            if current_course.decode().strip('\x00') == course and current_roll.decode().strip('\x00') == roll:
-                print("Grade already exists for the specified course and student.")
-                return
-    marks = float(input("Enter marks for the course: "))
-    with open(grade_file, "ab") as file:
-        grade_data = pack_grade_data(course, roll, marks)
-        file.write(grade_data)
-    print("Grade added successfully!")
-
-
-def import_grades_from_file(file_path):
-    pass
-
-
-def view_grades_of_a_student(roll):
-    pass
-
-
-def edit_grades_of_a_student_for_a_course():
-    pass
-
-
-def delete_grades_of_a_student_for_a_course():
-    pass
-
-
-def list_student_wise_grade_of_courses(roll):
-    with open(grade_file, "rb") as file:
-        found = False
-        while True:
-            data = file.read(struct.calcsize(grade_format))
-            if not data:
-                break
-            current_course, current_roll, current_marks = unpack_grade_data(data)
-            if current_roll.decode().strip('\x00') == roll:
-                found = True
-                print("Course: {}, Marks: {}".format(current_course.decode().strip('\x00'), current_marks))
-        if not found:
-            print("No grades found for the specified student.")
-
-
-def list_course_wise_grade_of_students(course):
-    with open(grade_file, "rb") as file:
-        found = False
-        while True:
-            data = file.read(struct.calcsize(grade_format))
-            if not data:
-                break
-            current_course, current_roll, current_marks = unpack_grade_data(data)
-            if current_course.decode().strip('\x00') == course:
-                found = True
-                print("Roll number: {}, Marks: {}".format(current_roll.decode().strip('\x00'), current_marks))
-        if not found:
-            print("No grades found for the specified course.")
-
-
-def award_sheet():
-    pass
-
-
-def summary_sheet():
-    pass
-
-
-def transcripts_for_a_range_of_student(start_roll,end_roll):
-    with open(student_file, "rb") as file1, open(grade_file, "rb") as file2:
-        found_students = False
-        while True:
-            student_data=file1.read(struct.calcsize(student_format))
-            if not student_data:
-                break
-            roll, name, department, semester, marks, phone = unpack_student_data(student_data) 
-            current_roll = roll.decode().strip('\x00')
-            if start_roll <= current_roll <= end_roll:
-                found_students = True
-                print("\nTranscript for Student\nRoll Number: {}\tName: {}".format(current_roll, name.decode().strip('\x00')))
-                print("\n-------------------------------------------------------")
-                file2.seek(0)
-                while True:
-                    grade_data = file2.read(struct.calcsize(grade_format))
-                    if not grade_data:
-                        break
-                    current_course, current_grade_roll, current_marks = unpack_grade_data(grade_data)
-                    if current_grade_roll.decode().strip('\x00') == current_roll:
-                        print(f"Course: {current_course}, Marks: {current_marks}")
-        if not found_students:
-            print(f"No students found in the specified range ({start_roll} to {end_roll}).")
-
+    def __getitem__(self, index):
+        return self.numbers[index]
 
 def main():
-    while True:
-        print("1. Quit the management system.\n2. Add a student.\n3. View student by roll no.\n4. Edit student by roll no.\n5. Delete student by roll no.\n6. List students by semester.\n7. List students by name.\n8. Print students list.\n9. Add grade of a student for a course.\n10. Import grades for a course for many students from a TABed text file.\n11. View grades of a student.\n12. Edit grades of a student for a course.\n13. Delete grades of a student for a course.\n14. List student wise (1 student) grade of courses.\n15. List course wise grade (1 course) of students.\n16. Award sheet (courses one by one, with students enrolled in it).\n17. Summary sheet (courses info, one by one, with one line for each student in it).\n18. Transcripts for a range of student.")
-        choice=int(input("Enter your choice:"))
+    number_list = Numbers()
+    number_list.add_number(8)
+    number_list.add_number(5)
+    number_list.add_number(2.7)
+    print("[",end="")
+    for i,num in enumerate(number_list.numbers_list):
+        print(num,end=" ")
+        if i < len(number_list.numbers_list) - 1:
+            print(", ", end="")
+    print("]")
 
-        if choice==1:
-            print(" Your program has ended/")
-            break
+    print(f"All odd numbers in the list: {number_list.odd_number_list}")
+    print(f"All even numbers in the list: {number_list.even_number_list}")
 
-        elif choice==2:
-            add_student()
+    number_list.alter_number(5, 10)
+    print("All Numbers after altering 5 with 10:",(number_list.numbers_list))
 
-        elif choice==3:
-            roll=input("Enter roll number: ")
-            view_student_by_roll_no(roll)
+    print(f"Number is present in the list? {number_list.search_number(8)}")
+    number_list.delete_number(5)
+    print(f"After delteing 5 from the list {number_list.numbers_list}")
 
-        elif choice==4:
-            roll=input("Enter roll number: ")
-            edit_student_by_roll_no(roll)
+    print("The total list element is ",end="")
+    print("[",end="")
+    for i, number in enumerate(number_list.numbers_list):
+        print(number,end="")
+        if i < len(number_list.numbers_list) - 1:
+            print(", ", end="")
+    print("]")
 
-        elif choice==5:
-            roll=input("Enter roll number: ")
-            delete_student_by_roll_no(roll)
-
-        elif choice==6:
-            semester=int(input("Enter semester: "))
-            list_students_by_semester(semester)
-
-        elif choice==7:
-            name=input("Enter name: ")
-            list_students_by_name(name)
-
-        elif choice==8:
-            print_students_list()
-
-        elif choice==9:
-            add_grade_of_a_student_for_a_course()
-
-        elif choice==10:
-            file_path = input("Enter the path of the TABed text file: ")
-            import_grades_from_file(file_path)
-
-        elif choice==11:
-            roll = input("Enter student's roll number: ")
-            view_grades_of_a_student(roll)
-
-        elif choice==12:
-            pass
-
-        elif choice==13:
-            pass
-
-        elif choice==14:
-            roll = input("Enter student's roll number: ")
-            list_student_wise_grade_of_courses(roll)
-
-        elif choice==15:
-            course = input("Enter course name: ")
-            list_course_wise_grade_of_students(course)
-
-        elif choice==16:
-            award_sheet()
-
-        elif choice==17:
-            summary_sheet()
-
-        elif choice==18:
-            start_roll = input("Enter the starting roll number: ")
-            end_roll = input("Enter the ending roll number: ")
-            transcripts_for_a_range_of_student(start_roll,end_roll)
-
-        else:
-            break
-
-if __name__=="__main__":
+if __name__ == "__main__":
     main()
-    
-            
-            
-
